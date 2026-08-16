@@ -1,42 +1,15 @@
 <#
 .SYNOPSIS
-    Automatische Aktualisierung installierter Anwendungen über Winget.
+    Automated application maintenance using Winget.
 
 .DESCRIPTION
-    Dieses Skript aktualisiert alle über Winget verwalteten Pakete auf
-    die jeweils aktuelle Version.
-
-    Die Ausführung ist für einen geplanten Task unter einem Administratorkonto
-    vorgesehen und kann unabhängig von Benutzeranmeldungen erfolgen.
-
-    Folgende Aufgaben werden durchgeführt:
-
-    1. Anlegen der erforderlichen Verzeichnisstruktur.
-    2. Bereinigung alter Logdateien (Log-Retention).
-    3. Prüfung der Winget-Verfügbarkeit.
-    4. Erzeugen eines eindeutigen Logfiles pro Ausführung.
-    5. Initialisierung der Protokollierung.
-    6. Aktualisieren der Winget-Paketquellen.
-    7. Installation aller verfügbaren Paketupdates.
-    8. Dokumentation von Erfolgen und Fehlern.
-    9. Abschluss der Protokollierung.
+    Updates installed Winget-managed packages, performs source validation,
+    handles logging and log retention, and is intended to run as a scheduled task.
 
 .NOTES
-    Autor      : CTN
-    Version    : 1.1.0
-    Lizenz     : Intern
-    Ausführung : Geplanter Task unter Administratorkonto
-    PowerShell : 5.1 oder neuer
-    Winget     : Aktuelle Version empfohlen
-
-.CHANGELOG
-    1.1.0
-        - Log-Retention ergänzt
-        - Prüfung auf verfügbare Winget-Installation ergänzt
-        - Winget-Pfad wird einmalig ermittelt und anschließend verwendet
-
-    1.0.0
-        - Erstversion
+    Author  : CTN
+    Version : 1.2.0
+    License : MIT
 #>
 
 # Bekannte Reparaturmaßnahme bei Fehler 0x8A15000F:
@@ -46,7 +19,6 @@
 #
 # winget source reset --force
 # winget source update
-
 
 # ---------------------------------------------------------------------------
 # Konfiguration
