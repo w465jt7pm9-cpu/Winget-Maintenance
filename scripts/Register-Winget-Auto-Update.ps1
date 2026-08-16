@@ -1,38 +1,28 @@
 <#
 .SYNOPSIS
-    Erstellt oder aktualisiert eine geplante Aufgabe für automatische
-    Winget-Updates.
+    Registriert die geplante Aufgabe für automatische Winget-Updates.
 
 .DESCRIPTION
-    Dieses Skript registriert eine Scheduled Task, welche das
-    Winget-Wartungsskript 'Winget Automatic Updates'
+    Erstellt oder aktualisiert eine Scheduled Task, die das
+    Winget-Wartungsskript unter dem lokalen SYSTEM-Konto mit
+    höchsten Privilegien ausführt.
 
-    - bei Benutzeranmeldung sowie
-    - zusätzlich täglich um 12:00 Uhr
-
-    unter dem lokalen Administratorkonto mit höchsten Privilegien ausführt.
-
-    Eigenschaften:
-
-    - Ausführung unabhängig von Benutzeranmeldungen
-    - Höchste Berechtigungsstufe
-    - Automatischer Neustart bei Fehlern
-    - Keine parallelen Task-Instanzen
-    - Nachholen verpasster Ausführungen
-    - Optionale Reaktivierung des Computers
-    - Idempotente Ausführung (Update statt Duplikat)
+    Die Aufgabe startet bei Benutzeranmeldung mit 5 Minuten Verzögerung
+    und zusätzlich täglich um 12:00 Uhr.
 
 .NOTES
-    Autor      : CTN
-    Version    : 1.1.0
-    PowerShell : 5.1 oder neuer
-    Lizenz     : Intern
+    Author      : CTN
+    Version     : 1.2.0
+    PowerShell  : 5.1 oder neuer
+    License     : MIT
 
 .CHANGELOG
+    1.2.0
+        - Header aktualisiert und vereinfacht
+
     1.1.0
         - Zusätzlicher Anmeldetrigger
         - Täglicher Fallback-Trigger um 12:00 Uhr
-        - Erweiterte Dokumentation
 
     1.0.0
         - Erstversion
@@ -41,6 +31,11 @@
 # ---------------------------------------------------------------------------
 # Konfiguration
 # ---------------------------------------------------------------------------
+
+# Konsolenausgabe auf UTF-8 stellen, damit deutsche Sonderzeichen
+# korrekt dargestellt werden, auch wenn die Windows-Codepage anders ist.
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
 
 # Name der geplanten Aufgabe.
 $TaskName = 'Winget Automatic Updates'
@@ -64,6 +59,17 @@ $ExecutionTime = '12:00'
 if (-not (Test-Path $ScriptPath)) {
     throw "Winget-Wartungsskript wurde nicht gefunden: $ScriptPath"
 }
+
+# Das Registrierungs-Skript muss mit Administratorrechten ausgeführt werden,
+# damit die geplante Aufgabe mit dem lokalen Admin-Benutzer und höchsten
+# Rechten erstellt werden kann.
+$currentPrincipal = [Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
+    throw 'Bitte als Administrator ausführen, damit die geplante Aufgabe mit Admin-Rechten registriert wird.'
+}
+
+# Aktueller Benutzer, der die geplante Aufgabe ausführen soll.
+$TaskUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 # ---------------------------------------------------------------------------
 # PowerShell-Pfad bestimmen
@@ -112,14 +118,13 @@ $DailyTrigger = New-ScheduledTaskTrigger `
 # Sicherheitskontext definieren
 # ---------------------------------------------------------------------------
 
-# SYSTEM-Konto:
-# - Keine Anmeldedaten erforderlich
-# - Keine Passwortabläufe
-# - Geeignet für Wartungsaufgaben
+# Aktueller lokaler Administrator:
+# - Ausführung mit Admin-Rechten
+# - Verwendung des aktuellen Benutzerkontos
 # - Höchste lokale Berechtigungen
 $Principal = New-ScheduledTaskPrincipal `
-    -UserId 'SYSTEM' `
-    -LogonType ServiceAccount `
+    -UserId $TaskUser `
+    -LogonType S4U `
     -RunLevel Highest
 
 # ---------------------------------------------------------------------------
@@ -195,7 +200,7 @@ Write-Host 'Winget Scheduled Task erfolgreich eingerichtet'
 Write-Host '=================================================='
 Write-Host "Name            : $($RegisteredTask.TaskName)"
 Write-Host "Skript          : $ScriptPath"
-Write-Host 'Konto           : SYSTEM'
+Write-Host "Konto           : $TaskUser"
 Write-Host 'Höchste Rechte  : Ja'
 Write-Host 'Trigger         : Bei Anmeldung'
 Write-Host "Fallback        : Täglich um $ExecutionTime"
