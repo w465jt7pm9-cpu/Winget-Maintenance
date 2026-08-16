@@ -145,7 +145,7 @@ catch {
         Write-CheckResult -Name 'Geplante Aufgabe' -Success $false -Message "Task '$TaskName' wurde nicht gefunden: $($_.Exception.Message)"
     }
     else {
-        Write-CheckResult -Name 'Geplante Aufgabe' -Success $true -Message "Task '$TaskName' nicht vorhanden, aber Prüfung läuft im Optional-Modus."
+        Write-Host "[WARN] Geplante Aufgabe - Task '$TaskName' nicht vorhanden, aber Prüfung läuft im Optional-Modus." -ForegroundColor Yellow
     }
 }
 
