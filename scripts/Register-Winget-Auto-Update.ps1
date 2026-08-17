@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Erstellt oder aktualisiert eine Scheduled Task, die das
-    Winget-Wartungsskript unter dem lokalen SYSTEM-Konto mit
+    Winget-Wartungsskript unter dem aktuellen Administratorkonto mit
     höchsten Privilegien ausführt.
 
     Die Aufgabe startet bei Benutzeranmeldung mit 5 Minuten Verzögerung

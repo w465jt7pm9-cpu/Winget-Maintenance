@@ -1,36 +1,36 @@
 # Installation
 
-Dieses Dokument beschreibt die vollständige Installation, Konfiguration, Überprüfung und Wartung von WingetMaintenance.
+This document describes the complete installation, configuration, verification, and maintenance of WingetMaintenance.
 
 ---
 
-# Voraussetzungen
+# Prerequisites
 
-Das Zielsystem muss folgende Voraussetzungen erfüllen:
+The target system must meet the following requirements:
 
 - Windows 11
 - Microsoft App Installer (Winget)
-- PowerShell 5.1 oder neuer
-- Lokale Administratorrechte
-- Internetzugang für Paketquellen
+- PowerShell 5.1 or later
+- Local administrator privileges
+- Internet access for package sources
 
 ---
 
-# Winget prüfen
+# Verify Winget
 
-Vor der Installation sollte geprüft werden, ob Winget verfügbar ist:
+Before installation, check whether Winget is available:
 
 ```powershell
 winget --version
 ```
 
-Beispiel:
+Example:
 
 ```text
 v1.29.290
 ```
 
-Zusätzlich sollte der App Installer installiert sein:
+The App Installer should also be installed:
 
 ```powershell
 Get-AppxPackage Microsoft.DesktopAppInstaller | Select-Object Name,Version
@@ -38,33 +38,33 @@ Get-AppxPackage Microsoft.DesktopAppInstaller | Select-Object Name,Version
 
 ---
 
-# Repository bereitstellen
+# Provide the Repository
 
-Repository klonen:
+Clone the repository:
 
 ```powershell
 git clone <REPOSITORY-URL>
 ```
 
-Arbeitsverzeichnis öffnen:
+Open the working directory:
 
 ```powershell
 cd WingetMaintenance
 ```
 
-Alternativ kann das Repository als ZIP-Datei heruntergeladen und entpackt werden.
+Alternatively, the repository can be downloaded as a ZIP file and extracted.
 
 ---
 
-# Zielverzeichnis erstellen
+# Create the Target Directory
 
-WingetMaintenance verwendet standardmäßig folgendes Arbeitsverzeichnis:
+WingetMaintenance uses the following working directory by default:
 
 ```text
 %ProgramData%\WingetMaintenance
 ```
 
-Verzeichnis erstellen:
+Create the directory:
 
 ```powershell
 New-Item -Path "$env:ProgramData\WingetMaintenance" -ItemType Directory -Force
@@ -72,21 +72,21 @@ New-Item -Path "$env:ProgramData\WingetMaintenance" -ItemType Directory -Force
 
 ---
 
-# Skripte bereitstellen
+# Deploy the Scripts
 
-Wartungsskript kopieren:
+Copy the maintenance script:
 
 ```powershell
 Copy-Item ".\scripts\Winget-Auto-Update.ps1" "$env:ProgramData\WingetMaintenance\" -Force
 ```
 
-Task-Registrierungsskript kopieren:
+Copy the task registration script:
 
 ```powershell
 Copy-Item ".\scripts\Register-Winget-Auto-Update.ps1" "$env:ProgramData\WingetMaintenance\" -Force
 ```
 
-Prüfskript kopieren:
+Copy the validation script:
 
 ```powershell
 Copy-Item ".\scripts\Test-WingetMaintenance.ps1" "$env:ProgramData\WingetMaintenance\" -Force
@@ -94,83 +94,83 @@ Copy-Item ".\scripts\Test-WingetMaintenance.ps1" "$env:ProgramData\WingetMainten
 
 ---
 
-# Vor dem Deployment testen
+# Test Before Deployment
 
-Vor der produktiven Freigabe sollte ein kurzer Deployment-Check ausgeführt werden.
-Das Prüfskript validiert die Syntax, die Winget-Verfügbarkeit und die geplante Aufgabe.
+Before rolling out to production, a quick deployment check should be run.
+The validation script checks the syntax, Winget availability, and the scheduled task.
 
-Ausführen:
+Run:
 
 ```powershell
 & "$env:ProgramData\WingetMaintenance\Test-WingetMaintenance.ps1"
 ```
 
-Optional mit Pflichtprüfung auf die existierende Task:
+Optionally with a mandatory check for the existing task:
 
 ```powershell
 & "$env:ProgramData\WingetMaintenance\Test-WingetMaintenance.ps1" -RequireTask
 ```
 
-Erwartetes Ergebnis:
+Expected result:
 
 ```text
 Deployment-Check erfolgreich: Alle Prüfungen bestanden.
 ```
 
-Wenn ein Prüfpunkt fehlschlägt, endet das Skript mit Exit-Code 1 und zeigt die Fehlerdetails an.
+If a check fails, the script exits with exit code 1 and displays the error details.
 
 ---
 
-# Geplante Aufgabe anlegen
+# Create the Scheduled Task
 
-Das Registrierungsskript muss als Administrator ausgeführt werden, damit die geplante Aufgabe mit den richtigen Rechten und dem aktuellen Admin-Konto registriert wird.
+The registration script must be run as an administrator so the scheduled task is registered with the correct privileges and the current admin account.
 
-PowerShell als Administrator starten:
+Start PowerShell as an administrator:
 
 ```powershell
 Start-Process powershell -Verb RunAs -ArgumentList '-NoExit -NoProfile -ExecutionPolicy Bypass -File "C:\Repos\WingetMaintenance\scripts\Register-Winget-Auto-Update.ps1"'
 ```
 
-Alternativ direkt aus einem bereits geöffneten Administrator-Fenster:
+Alternatively, run it directly from an already elevated window:
 
 ```powershell
 & "$env:ProgramData\WingetMaintenance\Register-Winget-Auto-Update.ps1"
 ```
 
-Erwartete Ausgabe:
+Expected output:
 
 ```text
 Winget Scheduled Task erfolgreich eingerichtet
 ```
 
-Wenn das Skript ohne Admin-Rechte gestartet wird, beendet es sich mit einer klaren Meldung: "Bitte als Administrator ausführen ..."
+If the script is started without administrator privileges, it stops with a clear message: "Bitte als Administrator ausführen ..."
 
 ---
 
-# Konfiguration der Aufgabe
+# Task Configuration
 
-Standardmäßig wird die Aufgabe mit folgenden Einstellungen erstellt:
+By default, the task is created with the following settings:
 
-| Einstellung | Wert |
+| Setting | Value |
 |------------|------|
-| Konto | Administratorkonto |
-| Berechtigungen | Höchste Rechte |
-| Anmeldung | 5 Minuten nach Benutzeranmeldung |
-| Fallback | Täglich um 12:00 Uhr |
-| Verpasste Läufe | Automatisch nachholen |
-| Task-Neustarts | Bis zu 3 Wiederholungen |
+| Account | Administrator account |
+| Privileges | Highest |
+| Logon | 5 minutes after user logon |
+| Fallback | Daily at 12:00 PM |
+| Missed runs | Caught up automatically |
+| Task restarts | Up to 3 retries |
 
 ---
 
-# Registrierung überprüfen
+# Verify the Registration
 
-Vorhandene Aufgabe anzeigen:
+Show the existing task:
 
 ```powershell
 Get-ScheduledTask -TaskName "Winget Automatic Updates"
 ```
 
-Details anzeigen:
+Show details:
 
 ```powershell
 Get-ScheduledTaskInfo -TaskName "Winget Automatic Updates"
@@ -178,21 +178,21 @@ Get-ScheduledTaskInfo -TaskName "Winget Automatic Updates"
 
 ---
 
-# Funktionstest
+# Functional Test
 
-Manuellen Testlauf starten:
+Start a manual test run:
 
 ```powershell
 Start-ScheduledTask -TaskName "Winget Automatic Updates"
 ```
 
-Status prüfen:
+Check the status:
 
 ```powershell
 Get-ScheduledTaskInfo -TaskName "Winget Automatic Updates"
 ```
 
-Erfolgreiche Ausführung:
+Successful execution:
 
 ```text
 LastTaskResult : 0
@@ -200,21 +200,21 @@ LastTaskResult : 0
 
 ---
 
-# Logdateien prüfen
+# Check Log Files
 
-Logdateien befinden sich unter:
+Log files are located at:
 
 ```text
 %ProgramData%\WingetMaintenance\Logs
 ```
 
-Alle Logdateien anzeigen:
+Show all log files:
 
 ```powershell
 Get-ChildItem "$env:ProgramData\WingetMaintenance\Logs"
 ```
 
-Neueste Logdatei anzeigen:
+Show the latest log file:
 
 ```powershell
 Get-Content ((Get-ChildItem "$env:ProgramData\WingetMaintenance\Logs" | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName)
@@ -222,9 +222,9 @@ Get-Content ((Get-ChildItem "$env:ProgramData\WingetMaintenance\Logs" | Sort-Obj
 
 ---
 
-# Typischer erfolgreicher Lauf
+# Typical Successful Run
 
-Beispiel:
+Example:
 
 ```text
 2026-08-16 12:00:02 [INFO ] Winget-Wartung gestartet
@@ -237,21 +237,21 @@ Beispiel:
 
 ---
 
-# Skript aktualisieren
+# Update the Scripts
 
-Neue Version des Wartungsskripts bereitstellen:
+Deploy the new version of the maintenance script:
 
 ```powershell
 Copy-Item ".\scripts\Winget-Auto-Update.ps1" "$env:ProgramData\WingetMaintenance\" -Force
 ```
 
-Neue Version des Registrierungsskripts bereitstellen:
+Deploy the new version of the registration script:
 
 ```powershell
 Copy-Item ".\scripts\Register-Winget-Auto-Update.ps1" "$env:ProgramData\WingetMaintenance\" -Force
 ```
 
-Anschließend die Aufgabe aktualisieren:
+Then update the task:
 
 ```powershell
 & "$env:ProgramData\WingetMaintenance\Register-Winget-Auto-Update.ps1"
@@ -259,48 +259,48 @@ Anschließend die Aufgabe aktualisieren:
 
 ---
 
-# Log-Retention
+# Log Retention
 
-Das Wartungsskript bereinigt alte Logdateien automatisch.
+The maintenance script automatically cleans up old log files.
 
-Standardwerte:
+Default values:
 
 ```text
-Aufbewahrungsdauer : 90 Tage
-Maximale Anzahl    : 100 Logdateien
+Retention period : 90 days
+Maximum count    : 100 log files
 ```
 
-Die Bereinigung erfolgt bei jedem Lauf.
+Cleanup runs on every execution.
 
 ---
 
-# Winget-Quelle prüfen
+# Verify the Winget Source
 
-Die Funktionsfähigkeit der Winget-Quelle kann manuell geprüft werden:
+The health of the Winget source can be checked manually:
 
 ```powershell
 winget search 7zip --source winget
 ```
 
-Eine erfolgreiche Antwort enthält Pakettreffer.
+A successful response contains package hits.
 
 ---
 
-# Deinstallation
+# Uninstallation
 
-Geplante Aufgabe entfernen:
+Remove the scheduled task:
 
 ```powershell
 Unregister-ScheduledTask -TaskName "Winget Automatic Updates" -Confirm:$false
 ```
 
-Arbeitsverzeichnis entfernen:
+Remove the working directory:
 
 ```powershell
 Remove-Item "$env:ProgramData\WingetMaintenance" -Recurse -Force
 ```
 
-Repository optional entfernen:
+Optionally remove the repository:
 
 ```powershell
 Remove-Item "C:\Repos\WingetMaintenance" -Recurse -Force
@@ -308,33 +308,33 @@ Remove-Item "C:\Repos\WingetMaintenance" -Recurse -Force
 
 ---
 
-# Fehlerbehebung
+# Troubleshooting
 
-Für bekannte Fehlerbilder siehe:
+For known issues, see:
 
 ```text
 docs/TROUBLESHOOTING.md
 ```
 
-Insbesondere:
+In particular:
 
 ```text
 0x8A15000F
 Von der Quelle benoetigte Daten fehlen
 ```
 
-ist dort ausführlich dokumentiert.
+is documented there in detail.
 
 ---
 
-# Empfohlene Betriebsweise
+# Recommended Operating Practice
 
-Für den produktiven Einsatz wird empfohlen:
+For production use, it is recommended to:
 
-- automatische Windows-Updates aktivieren
-- Microsoft Store Updates aktivieren
-- WingetMaintenance regelmäßig laufen lassen
-- Logdateien gelegentlich prüfen
-- Repository aktuell halten
+- enable automatic Windows updates
+- enable Microsoft Store updates
+- let WingetMaintenance run regularly
+- occasionally review log files
+- keep the repository up to date
 
-Dadurch lassen sich die meisten Anwendungen ohne manuelle Pflege auf einem aktuellen Stand halten.
+This keeps most applications up to date without manual maintenance.

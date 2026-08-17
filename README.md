@@ -19,7 +19,10 @@ Automatic application updates via Winget with a focus on transparency, maintaina
 |--------|--------|
 | `scripts/Winget-Auto-Update.ps1` | Performs the actual update process |
 | `scripts/Register-Winget-Auto-Update.ps1` | Creates or updates the scheduled task |
+| `scripts/Test-WingetMaintenance.ps1` | Validates the deployment (Winget, scripts, scheduled task) |
 | `docs/INSTALL.md` | Installation and setup guide |
+| `docs/ARCHITECTURE.md` | Component structure and runtime flow |
+| `docs/CONCEPTS.md` | Background concepts and design decisions |
 | `docs/TROUBLESHOOTING.md` | Troubleshooting and known solutions |
 
 ## Default Behavior

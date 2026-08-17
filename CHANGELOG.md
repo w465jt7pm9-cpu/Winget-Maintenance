@@ -9,6 +9,23 @@ Das Projekt orientiert sich an den Grundsätzen von:
 
 ---
 
+# [1.2.0] - 2026-08-17
+
+## Hinzugefügt
+
+- Englischsprachige Projektdokumentation (ARCHITECTURE, CONCEPTS, INSTALL, TROUBLESHOOTING)
+
+## Geändert
+
+- README-Komponententabelle um Testskript und fehlende Dokumente ergänzt
+
+## Behoben
+
+- Abweichende Skriptversion in der Protokollausgabe von Winget-Auto-Update.ps1 korrigiert (1.1.0 -> 1.2.0)
+- Fehlerhafte Beschreibung des Ausführungskontos (SYSTEM statt Administratorkonto) in Register-Winget-Auto-Update.ps1 korrigiert
+
+---
+
 # [1.1.1] - 2026-08-16
 
 ## Hinzugefügt

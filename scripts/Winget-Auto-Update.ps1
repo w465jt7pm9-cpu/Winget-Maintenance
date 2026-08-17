@@ -169,7 +169,7 @@ try {
 	Write-Log "Computer      : $env:COMPUTERNAME"
 	Write-Log "Benutzer      : $env:USERNAME"
 	Write-Log "Winget        : $WingetExe"
-	Write-Log 'Skriptversion : 1.1.0'
+	Write-Log 'Skriptversion : 1.2.0'
 	Write-Log '=================================================='
 
     # -----------------------------------------------------------------------
