@@ -6,7 +6,7 @@ This document explains the background concepts and design decisions behind Winge
 
 Winget (Windows Package Manager) is Microsoft's built-in command-line package manager, shipped as part of the **App Installer**. It can install, upgrade, and remove applications from configured sources (primarily the community `winget` source). WingetMaintenance relies entirely on the `winget.exe` CLI — it does not use any private API or additional package manager.
 
-The project refreshes the source with `winget source update` and upgrades all installed packages with `winget upgrade --all --include-unknown --silent`.
+The project refreshes the source with `winget source update` and upgrades identified packages from the explicit `winget` source with `winget upgrade --all --source winget --silent`.
 
 ## Why a Scheduled Task instead of a service?
 

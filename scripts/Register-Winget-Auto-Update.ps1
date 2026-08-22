@@ -12,11 +12,14 @@
 
 .NOTES
     Author      : CTN
-    Version     : 1.3.0
+    Version     : 1.4.0
     PowerShell  : 5.1 oder neuer
     License     : MIT
 
 .CHANGELOG
+    1.4.0
+        - Installationsverzeichnis und Inhalte gegen lokale Manipulation geschützt
+
     1.3.0
         - Wöchentlicher Hauptlauf am Freitag
 
@@ -51,8 +54,53 @@ $ScriptPath = Join-Path `
     (Join-Path $env:ProgramData 'WingetMaintenance') `
     'Winget-Auto-Update.ps1'
 
+$InstallDir = Split-Path -Path $ScriptPath -Parent
+
 # Wöchentlicher Hauptlauf am Freitag.
 $ExecutionTime = '12:00'
+
+function Protect-InstallDirectory {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+        New-Item -Path $Path -ItemType Directory -Force | Out-Null
+    }
+
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18')
+    $administratorsSid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-32-544')
+    $items = @(Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Stop) + @(Get-Item -LiteralPath $Path)
+
+    foreach ($item in $items | Sort-Object { $_.FullName.Length }) {
+        $acl = Get-Acl -LiteralPath $item.FullName -ErrorAction Stop
+        $acl.SetAccessRuleProtection($true, $false)
+        $acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
+        $acl.SetOwner($administratorsSid)
+
+        $inheritance = [System.Security.AccessControl.InheritanceFlags]::None
+        $propagation = [System.Security.AccessControl.PropagationFlags]::None
+
+        if ($item.PSIsContainer) {
+            $inheritance = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+                [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        }
+
+        foreach ($sid in @($systemSid, $administratorsSid)) {
+            $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                $sid,
+                [System.Security.AccessControl.FileSystemRights]::FullControl,
+                $inheritance,
+                $propagation,
+                [System.Security.AccessControl.AccessControlType]::Allow
+            )
+            $acl.AddAccessRule($rule)
+        }
+
+        Set-Acl -LiteralPath $item.FullName -AclObject $acl -ErrorAction Stop
+    }
+}
 
 # ---------------------------------------------------------------------------
 # Vorbedingungen prüfen
@@ -70,6 +118,8 @@ $currentPrincipal = [Security.Principal.WindowsPrincipal] [Security.Principal.Wi
 if (-not ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
     throw 'Bitte als Administrator ausführen, damit die geplante Aufgabe mit Admin-Rechten registriert wird.'
 }
+
+Protect-InstallDirectory -Path $InstallDir
 
 # Aktueller Benutzer, der die geplante Aufgabe ausführen soll.
 $TaskUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
@@ -95,7 +145,7 @@ if (-not (Test-Path $PowerShellExe)) {
 # Auszuführender Prozess inkl. Skriptparameter.
 $Action = New-ScheduledTaskAction `
     -Execute $PowerShellExe `
-    -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`""
+    -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$ScriptPath`""
 
 # ---------------------------------------------------------------------------
 # Trigger definieren

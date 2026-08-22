@@ -9,6 +9,15 @@ Das Projekt orientiert sich an den Grundsätzen von:
 
 ---
 
+# [1.5.0] - 2026-08-22
+
+## Geändert
+
+- Updates auf die explizite `winget`-Quelle begrenzt
+- Automatische Updates unbekannter Pakete deaktiviert
+
+---
+
 # [1.4.0] - 2026-08-22
 
 ## Geändert

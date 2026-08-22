@@ -112,7 +112,7 @@ Mindestens ein Paketupdate wurde nicht erfolgreich abgeschlossen (ExitCode: <cod
 2. Re-run the failing upgrade manually for more detail:
 
    ```powershell
-   winget upgrade --all --include-unknown --accept-source-agreements --accept-package-agreements
+   winget upgrade --all --source winget --accept-source-agreements --accept-package-agreements
    ```
 
 3. If a specific package consistently fails, try upgrading it individually or excluding it, and check for vendor-specific installer issues.

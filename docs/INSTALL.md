@@ -70,6 +70,10 @@ Create the directory:
 New-Item -Path "$env:ProgramData\WingetMaintenance" -ItemType Directory -Force
 ```
 
+The registration script protects this directory automatically. Only `SYSTEM`
+and local administrators retain write access to the scripts, task definition,
+and logs.
+
 ---
 
 # Deploy the Scripts
@@ -97,7 +101,7 @@ Copy-Item ".\scripts\Test-WingetMaintenance.ps1" "$env:ProgramData\WingetMainten
 # Test Before Deployment
 
 Before rolling out to production, a quick deployment check should be run.
-The validation script checks the syntax, Winget availability, and the scheduled task.
+The validation script checks the syntax, Winget availability, directory permissions, and the scheduled task.
 
 Run:
 
@@ -160,6 +164,17 @@ By default, the task is created with the following settings:
 | Logon fallback | Only when the last successful Friday run is more than 7 days old |
 | Missed runs | Caught up automatically |
 | Task restarts | Up to 3 retries |
+
+Verify the protection:
+
+```powershell
+icacls "$env:ProgramData\WingetMaintenance"
+```
+
+The output should not grant write permissions to `Users` or other untrusted accounts.
+
+Updates are restricted to identified packages from the `winget` source. Packages
+that Winget cannot identify are not updated automatically.
 
 ---
 

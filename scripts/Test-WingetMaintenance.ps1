@@ -74,6 +74,40 @@ function Test-ScriptSyntax {
     }
 }
 
+function Test-InstallDirectorySecurity {
+    param(
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+        Write-CheckResult -Name 'Verzeichnisrechte' -Success $false -Message "Pfad nicht gefunden: $Path"
+        return
+    }
+
+    try {
+        $usersSid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-32-545')
+        $writeRights = [System.Security.AccessControl.FileSystemRights]::Write -bor
+            [System.Security.AccessControl.FileSystemRights]::Modify -bor
+            [System.Security.AccessControl.FileSystemRights]::FullControl
+        $acl = Get-Acl -LiteralPath $Path -ErrorAction Stop
+        $unsafeRules = @($acl.Access | Where-Object {
+            $_.AccessControlType -eq 'Allow' -and
+            $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value -eq $usersSid.Value -and
+            (($_.FileSystemRights -band $writeRights) -ne 0)
+        })
+
+        if ($unsafeRules.Count -eq 0) {
+            Write-CheckResult -Name 'Verzeichnisrechte' -Success $true -Message 'Nur SYSTEM und Administrators haben Schreibrechte'
+        }
+        else {
+            Write-CheckResult -Name 'Verzeichnisrechte' -Success $false -Message 'Users besitzt Schreibrechte auf dem Installationsverzeichnis'
+        }
+    }
+    catch {
+        Write-CheckResult -Name 'Verzeichnisrechte' -Success $false -Message "ACL konnte nicht geprüft werden: $($_.Exception.Message)"
+    }
+}
+
 Write-Host "== WingetMaintenance Deployment-Check ==" -ForegroundColor Cyan
 
 $MaintenanceScript = Join-Path $BaseDir 'Winget-Auto-Update.ps1'
@@ -104,6 +138,8 @@ if (Test-Path $LogDir) {
 else {
     Write-CheckResult -Name 'Log-Verzeichnis' -Success $false -Message "Pfad nicht gefunden: $LogDir"
 }
+
+Test-InstallDirectorySecurity -Path $BaseDir
 
 # Wartungsskript prüfen
 Test-ScriptSyntax -Path $MaintenanceScript

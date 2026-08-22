@@ -8,7 +8,7 @@
 
 .NOTES
     Author  : CTN
-    Version : 1.4.0
+    Version : 1.5.0
     License : MIT
 #>
 
@@ -199,7 +199,7 @@ try {
 	Write-Log "Computer      : $env:COMPUTERNAME"
 	Write-Log "Benutzer      : $env:USERNAME"
 	Write-Log "Winget        : $WingetExe"
-    Write-Log 'Skriptversion : 1.4.0'
+    Write-Log 'Skriptversion : 1.5.0'
 	Write-Log '=================================================='
 
     $Now = Get-Date
@@ -233,7 +233,7 @@ try {
 	
 	$UpdateStart = Get-Date
 	
-	$WingetOutput = & $WingetExe upgrade --all --include-unknown --silent --accept-source-agreements --accept-package-agreements 2>&1
+    $WingetOutput = & $WingetExe upgrade --all --source winget --silent --accept-source-agreements --accept-package-agreements 2>&1
 	$WingetExitCode = $LASTEXITCODE
 
 	foreach ($Line in $WingetOutput) {

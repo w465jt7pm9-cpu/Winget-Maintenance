@@ -4,7 +4,7 @@ This document describes the internal design of WingetMaintenance: its components
 
 ## Overview
 
-WingetMaintenance consists of two independent PowerShell scripts and a small amount of state on disk (logs). There is no service, no database, and no network component beyond Winget itself.
+WingetMaintenance consists of three independent PowerShell scripts and a small amount of state on disk (logs). There is no service, no database, and no network component beyond Winget itself.
 
 ```mermaid
 flowchart TD
@@ -31,7 +31,7 @@ The maintenance script itself. Responsible for:
 4. Creating a timestamped log file for the current run.
 5. Updating and validating Winget's package sources (`winget source update`).
 6. Skipping redundant runs when a successful Friday run occurred within the last seven days.
-7. Upgrading all installed packages (`winget upgrade --all --include-unknown --silent ...`).
+7. Upgrading identified packages from the `winget` source (`winget upgrade --all --source winget --silent ...`).
 8. Writing structured, leveled log entries (`INFO` / `WARN` / `ERROR`) throughout.
 9. Re-throwing errors so the scheduled task reports a non-zero exit code on failure.
 
@@ -44,13 +44,14 @@ A setup script, run once (or re-run after changes) by an administrator. Responsi
 1. Verifying the maintenance script exists at its expected location.
 2. Verifying it is running elevated (required to register a task with the highest run level).
 3. Building a `ScheduledTaskAction` that invokes `powershell.exe` against the maintenance script.
-4. Defining two triggers:
+4. Protecting the installation directory and its contents so only `SYSTEM` and local administrators can write to them.
+5. Defining two triggers:
    - **Logon trigger**: fires 5 minutes after user logon, avoiding contention with other autostart processes (OneDrive, Defender, Windows Update, etc.).
     - **Weekly trigger**: fires every Friday at 12:00 as a fallback for machines with long-running sessions.
     - The maintenance script skips logon-triggered runs until more than seven days have passed since the last successful Friday run.
-5. Defining a `ScheduledTaskPrincipal` that runs as the current (administrator) user with `S4U` logon type and `Highest` run level.
-6. Defining `ScheduledTaskSettingsSet` for resilience: allowed on battery, wakes the computer, retries on failure (up to 3 times, 15 minutes apart), and enforces a 4-hour execution time limit.
-7. Removing any pre-existing task with the same name before registering the new one (idempotent re-registration).
+6. Defining a `ScheduledTaskPrincipal` that runs as the current (administrator) user with `S4U` logon type and `Highest` run level.
+7. Defining `ScheduledTaskSettingsSet` for resilience: allowed on battery, wakes the computer, retries on failure (up to 3 times, 15 minutes apart), and enforces a 4-hour execution time limit.
+8. Removing any pre-existing task with the same name before registering the new one (idempotent re-registration).
 
 This script only configures the Task Scheduler; it does not perform any package updates itself.
 
@@ -61,8 +62,9 @@ A read-only validation script intended for use after deployment (e.g., in a CI/C
 1. Confirming `winget.exe` is available.
 2. Confirming the base and log directories exist.
 3. Parsing both scripts with the PowerShell AST parser to catch syntax errors without executing them.
-4. Checking that the scheduled task exists, has a non-SYSTEM principal, has at least two triggers, and has at least one action.
-5. Reporting a pass/fail summary and exiting with a non-zero code if any check fails.
+4. Checking that the installation directory does not grant write access to `Users`.
+5. Checking that the scheduled task exists, has a non-SYSTEM principal, has the logon and Friday triggers, and has at least one action.
+6. Reporting a pass/fail summary and exiting with a non-zero code if any check fails.
 
 This script performs no upgrades and makes no changes to the system; it only inspects configuration and syntax.
 
@@ -79,7 +81,7 @@ sequenceDiagram
     Script->>Log: Initialize log file, apply retention
     Script->>Winget: Resolve winget.exe path
     Script->>Winget: source update
-    Script->>Winget: upgrade --all --include-unknown --silent
+    Script->>Winget: upgrade --all --source winget --silent
     Winget-->>Script: Exit code + output
     Script->>Log: Write result (INFO/WARN/ERROR)
     Script-->>Task: Exit code (0 success, non-zero failure)
