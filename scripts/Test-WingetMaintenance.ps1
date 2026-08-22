@@ -125,11 +125,19 @@ try {
             Write-CheckResult -Name 'Aufgaben-Principal' -Success $false -Message "Unerwarteter Principal: $($task.Principal.UserId)"
         }
 
-        if ($task.Triggers.Count -ge 2) {
-            Write-CheckResult -Name 'Task-Trigger' -Success $true -Message "$($task.Triggers.Count) Trigger registriert"
+        $hasLogonTrigger = [bool]($task.Triggers | Where-Object {
+            $_.TriggerType -eq 'Logon' -or $_.CimClass.CimClassName -eq 'MSFT_TaskLogonTrigger'
+        })
+        $hasWeeklyTrigger = [bool]($task.Triggers | Where-Object {
+            ($_.TriggerType -eq 'Weekly' -or $_.CimClass.CimClassName -eq 'MSFT_TaskWeeklyTrigger') -and
+            ($_.DaysOfWeek -match 'Friday' -or $_.DaysOfWeek -contains 32)
+        })
+
+        if ($hasLogonTrigger -and $hasWeeklyTrigger) {
+            Write-CheckResult -Name 'Task-Trigger' -Success $true -Message 'Anmelde- und Freitagstrigger registriert'
         }
         else {
-            Write-CheckResult -Name 'Task-Trigger' -Success $false -Message 'Weniger als 2 Trigger gefunden'
+            Write-CheckResult -Name 'Task-Trigger' -Success $false -Message 'Erwarteter Anmelde- oder Freitagstrigger fehlt'
         }
 
         if ($task.Actions.Count -ge 1) {

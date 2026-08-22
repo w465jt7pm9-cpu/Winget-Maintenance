@@ -8,15 +8,18 @@
     höchsten Privilegien ausführt.
 
     Die Aufgabe startet bei Benutzeranmeldung mit 5 Minuten Verzögerung
-    und zusätzlich täglich um 12:00 Uhr.
+    und zusätzlich jeden Freitag um 12:00 Uhr.
 
 .NOTES
     Author      : CTN
-    Version     : 1.2.0
+    Version     : 1.3.0
     PowerShell  : 5.1 oder neuer
     License     : MIT
 
 .CHANGELOG
+    1.3.0
+        - Wöchentlicher Hauptlauf am Freitag
+
     1.2.0
         - Header aktualisiert und vereinfacht
 
@@ -48,7 +51,7 @@ $ScriptPath = Join-Path `
     (Join-Path $env:ProgramData 'WingetMaintenance') `
     'Winget-Auto-Update.ps1'
 
-# Täglicher Fallback-Zeitpunkt.
+# Wöchentlicher Hauptlauf am Freitag.
 $ExecutionTime = '12:00'
 
 # ---------------------------------------------------------------------------
@@ -109,9 +112,10 @@ $LogonTrigger = New-ScheduledTaskTrigger `
 $LogonTrigger.Delay = 'PT5M'
 
 # Sekundärer Trigger:
-# Tägliche Ausführung als Sicherheitsnetz.
-$DailyTrigger = New-ScheduledTaskTrigger `
-    -Daily `
+# Wöchentliche Ausführung als Sicherheitsnetz.
+$WeeklyTrigger = New-ScheduledTaskTrigger `
+    -Weekly `
+    -DaysOfWeek Friday `
     -At $ExecutionTime
 
 # ---------------------------------------------------------------------------
@@ -149,7 +153,7 @@ $Task = New-ScheduledTask `
     -Action $Action `
     -Trigger @(
         $LogonTrigger
-        $DailyTrigger
+        $WeeklyTrigger
     ) `
     -Principal $Principal `
     -Settings $Settings `
@@ -203,7 +207,8 @@ Write-Host "Skript          : $ScriptPath"
 Write-Host "Konto           : $TaskUser"
 Write-Host 'Höchste Rechte  : Ja'
 Write-Host 'Trigger         : Bei Anmeldung'
-Write-Host "Fallback        : Täglich um $ExecutionTime"
+Write-Host "Hauptlauf       : Jeden Freitag um $ExecutionTime"
+Write-Host 'Anmeldefallback : Nur bei überfälligem Freitagslauf'
 Write-Host 'Verpasste Läufe : Werden nachgeholt'
 Write-Host 'Neustarts       : Bis zu 3 Wiederholungen'
 Write-Host '=================================================='

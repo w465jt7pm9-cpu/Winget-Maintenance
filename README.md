@@ -6,7 +6,7 @@ Automatic application updates via Winget with a focus on transparency, maintaina
 
 - Automatic updates for all applications managed by Winget
 - Scheduled execution through Windows Task Scheduler
-- Winget source health check before every update run
+- Winget source refresh before every update run
 - Detailed UTF-8 logging
 - Automatic log retention
 - Error handling with meaningful log entries
@@ -29,33 +29,14 @@ Automatic application updates via Winget with a focus on transparency, maintaina
 
 The scheduled task is configured to:
 
-- Run 5 minutes after user logon
-- Run daily at 12:00 PM as a fallback
+- Run every Friday at 12:00 PM
+- Check after user logon only when the last successful Friday run is more than 7 days old
 - Execute with elevated privileges
-- Automatically catch up on missed runs
-
-## Requirements
-
-- Windows 11
-- Winget (Microsoft App Installer)
-- PowerShell 5.1 or later
-- Administrative privileges
 
 ## Installation
 
-The complete installation guide can be found in:
-
-```text
-docs/INSTALL.md
-```
-
-## Troubleshooting
-
-Known issues and their solutions are documented in:
-
-```text
-docs/TROUBLESHOOTING.md
-```
+See [docs/INSTALL.md](docs/INSTALL.md) for prerequisites, installation, and verification.
+Known issues are documented in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## License
 

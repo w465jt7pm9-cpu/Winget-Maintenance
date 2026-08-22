@@ -10,7 +10,7 @@ WingetMaintenance consists of two independent PowerShell scripts and a small amo
 flowchart TD
     A[Register-Winget-Auto-Update.ps1] -->|creates/updates| B[Scheduled Task]
     B -->|AtLogOn +5min| C[Winget-Auto-Update.ps1]
-    B -->|Daily 12:00| C
+    B -->|Weekly Friday 12:00| C
     C --> D[winget source update]
     C --> E[winget upgrade --all]
     C --> F[Log file in ProgramData]
@@ -29,8 +29,8 @@ The maintenance script itself. Responsible for:
 2. Enforcing log retention (age-based and count-based).
 3. Resolving the path to `winget.exe` via `Get-Command`, failing fast with a descriptive error if it is missing.
 4. Creating a timestamped log file for the current run.
-5. Validating that the Winget source is reachable (`winget search 7zip --source winget`).
-6. Updating Winget's package sources (`winget source update`).
+5. Updating and validating Winget's package sources (`winget source update`).
+6. Skipping redundant runs when a successful Friday run occurred within the last seven days.
 7. Upgrading all installed packages (`winget upgrade --all --include-unknown --silent ...`).
 8. Writing structured, leveled log entries (`INFO` / `WARN` / `ERROR`) throughout.
 9. Re-throwing errors so the scheduled task reports a non-zero exit code on failure.
@@ -46,7 +46,8 @@ A setup script, run once (or re-run after changes) by an administrator. Responsi
 3. Building a `ScheduledTaskAction` that invokes `powershell.exe` against the maintenance script.
 4. Defining two triggers:
    - **Logon trigger**: fires 5 minutes after user logon, avoiding contention with other autostart processes (OneDrive, Defender, Windows Update, etc.).
-   - **Daily trigger**: fires at 12:00 as a fallback in case the logon trigger is missed.
+    - **Weekly trigger**: fires every Friday at 12:00 as a fallback for machines with long-running sessions.
+    - The maintenance script skips logon-triggered runs until more than seven days have passed since the last successful Friday run.
 5. Defining a `ScheduledTaskPrincipal` that runs as the current (administrator) user with `S4U` logon type and `Highest` run level.
 6. Defining `ScheduledTaskSettingsSet` for resilience: allowed on battery, wakes the computer, retries on failure (up to 3 times, 15 minutes apart), and enforces a 4-hour execution time limit.
 7. Removing any pre-existing task with the same name before registering the new one (idempotent re-registration).
@@ -74,10 +75,9 @@ sequenceDiagram
     participant Winget as winget.exe
     participant Log as Log file
 
-    Task->>Script: Start (logon+5min or daily 12:00)
+    Task->>Script: Start (logon+5min or Friday 12:00)
     Script->>Log: Initialize log file, apply retention
     Script->>Winget: Resolve winget.exe path
-    Script->>Winget: search 7zip --source winget (source health check)
     Script->>Winget: source update
     Script->>Winget: upgrade --all --include-unknown --silent
     Winget-->>Script: Exit code + output

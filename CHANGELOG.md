@@ -9,6 +9,19 @@ Das Projekt orientiert sich an den Grundsätzen von:
 
 ---
 
+# [1.4.0] - 2026-08-22
+
+## Geändert
+
+- Hauptlauf der geplanten Aufgabe auf jeden Freitag um 12:00 Uhr umgestellt
+- Anmeldetrigger auf überfällige Freitagsläufe begrenzt
+- Redundanten `winget search 7zip`-Vorabcheck entfernt
+- Leere Winget-Ausgabezeilen werden beim Logging ignoriert
+- Native Winget-Ausgabe wird als UTF-8 verarbeitet
+- Dokumentation und Deployment-Check an den neuen Zeitplan angepasst
+
+---
+
 # [1.2.0] - 2026-08-17
 
 ## Hinzugefügt

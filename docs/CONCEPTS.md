@@ -6,15 +6,7 @@ This document explains the background concepts and design decisions behind Winge
 
 Winget (Windows Package Manager) is Microsoft's built-in command-line package manager, shipped as part of the **App Installer**. It can install, upgrade, and remove applications from configured sources (primarily the community `winget` source). WingetMaintenance relies entirely on the `winget.exe` CLI — it does not use any private API or additional package manager.
 
-Relevant commands used by this project:
-
-| Command | Purpose |
-|---|---|
-| `winget search <term> --source winget` | Cheap way to verify the source is reachable before doing real work |
-| `winget source update` | Refreshes local package source metadata |
-| `winget upgrade --all --include-unknown --silent` | Upgrades all installed packages, including ones Winget cannot fully identify |
-
-`--include-unknown` is used because some packages report no version information to Winget; without this flag they would silently never be upgraded.
+The project refreshes the source with `winget source update` and upgrades all installed packages with `winget upgrade --all --include-unknown --silent`.
 
 ## Why a Scheduled Task instead of a service?
 
@@ -25,38 +17,26 @@ A Windows Service would require a long-running process, a separate installer, an
 - Exit codes and run history are natively tracked by Task Scheduler (`Get-ScheduledTaskInfo`).
 - Easy to inspect, modify, or remove using standard Windows tools (`taskschd.msc`, `Get-ScheduledTask`).
 
-## Why two triggers (logon + daily)?
+## Why two triggers (logon + weekly)?
 
 Relying on a single trigger creates blind spots:
 
 - **Logon-only** would never run on machines that stay logged in for days without reboot/relogon.
-- **Daily-only** would delay updates on machines that are frequently restarted but rarely stay on until the fixed time.
+- **Weekly-only** would delay updates on machines that are frequently restarted but rarely stay on until the fixed time.
 
-Combining both triggers means updates happen shortly after most sessions start, with the daily trigger acting as a safety net for long-running sessions. The 5-minute delay on the logon trigger avoids competing for disk/CPU/network with other autostart programs (OneDrive, Defender, Windows Update, etc.) during the busiest phase of logon.
+The weekly trigger covers long-running sessions. The logon trigger catches machines that were offline at the scheduled time, but the script suppresses it when a successful Friday run occurred within the last seven days. Its 5-minute delay avoids contention during logon.
 
 ## Why run as the administrator account instead of SYSTEM?
 
-Running as `SYSTEM` is common for scheduled tasks, but Winget's per-user package integrations (and some MSIX-based packages) behave more predictably when run in an interactive administrator's security context. The registration script therefore:
-
-- Uses the **currently logged-on administrator** (`$TaskUser`) as the task principal.
-- Uses **`S4U` (Service for User)** logon type, which allows the task to run with the user's identity without needing the account's password stored anywhere.
-- Requests **`Highest`** run level so the task has administrator privileges without triggering an interactive UAC prompt at execution time.
+Winget's per-user integrations behave more predictably in the administrator's security context. The task therefore uses the current administrator with `S4U` and `Highest` run level.
 
 ## Why store data in `ProgramData` instead of a user profile?
 
-`%ProgramData%` is a machine-wide location, independent of any specific user profile. Because the scheduled task may run under different circumstances (different logged-on users, or before a user profile is fully loaded), storing scripts and logs here ensures:
-
-- The maintenance script has a stable, predictable path regardless of who is logged on.
-- Logs are collected in one place for all users, simplifying troubleshooting and auditing.
-- No dependency on a specific user profile existing or being loaded.
+`%ProgramData%` provides a stable, machine-wide location for scripts and shared logs.
 
 ## Why timestamped, per-run log files?
 
-Each execution of `Winget-Auto-Update.ps1` creates a new log file named `Winget_<yyyy-MM-dd_HH-mm-ss>.log` rather than appending to a single shared log. This:
-
-- Avoids concurrent-write issues if a run is somehow triggered twice.
-- Makes it trivial to correlate a specific run with a specific Task Scheduler execution (via matching timestamps).
-- Simplifies retention: whole files can be aged out instead of parsing a single ever-growing log.
+Each execution creates a new `Winget_<yyyy-MM-dd_HH-mm-ss>.log` file. This avoids concurrent writes, simplifies correlation with Task Scheduler, and makes retention straightforward.
 
 ## Why log retention (age- and count-based)?
 
@@ -65,7 +45,7 @@ Unattended, recurring tasks can silently accumulate log files indefinitely. Two 
 - **Age-based**: files older than 90 days are deleted, since they are unlikely to be useful for troubleshooting recent issues.
 - **Count-based**: only the newest 100 files are kept, protecting against unexpectedly frequent runs filling the disk.
 
-Retention failures are logged as warnings but never abort the actual update — cleaning up old logs is a "nice to have," not a reason to skip maintaining the system.
+Retention failures are warnings and never abort the update.
 
 ## Why fail loudly instead of swallowing errors?
 

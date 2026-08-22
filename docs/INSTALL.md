@@ -156,7 +156,8 @@ By default, the task is created with the following settings:
 | Account | Administrator account |
 | Privileges | Highest |
 | Logon | 5 minutes after user logon |
-| Fallback | Daily at 12:00 PM |
+| Main run | Every Friday at 12:00 PM |
+| Logon fallback | Only when the last successful Friday run is more than 7 days old |
 | Missed runs | Caught up automatically |
 | Task restarts | Up to 3 retries |
 
@@ -222,21 +223,6 @@ Get-Content ((Get-ChildItem "$env:ProgramData\WingetMaintenance\Logs" | Sort-Obj
 
 ---
 
-# Typical Successful Run
-
-Example:
-
-```text
-2026-08-16 12:00:02 [INFO ] Winget-Wartung gestartet
-2026-08-16 12:00:02 [INFO ] Pruefe Winget-Quelle ...
-2026-08-16 12:00:08 [INFO ] Pruefe auf Updates ...
-2026-08-16 12:00:11 [INFO ] Es wurde kein installiertes Paket gefunden, das den Eingabekriterien entspricht.
-2026-08-16 12:00:11 [INFO ] Update-Dauer : 00:00:03.1278341
-2026-08-16 12:00:11 [INFO ] Alle verfuegbaren Updates wurden erfolgreich verarbeitet.
-```
-
----
-
 # Update the Scripts
 
 Deploy the new version of the maintenance script:
@@ -274,18 +260,6 @@ Cleanup runs on every execution.
 
 ---
 
-# Verify the Winget Source
-
-The health of the Winget source can be checked manually:
-
-```powershell
-winget search 7zip --source winget
-```
-
-A successful response contains package hits.
-
----
-
 # Uninstallation
 
 Remove the scheduled task:
@@ -308,33 +282,4 @@ Remove-Item "C:\Repos\WingetMaintenance" -Recurse -Force
 
 ---
 
-# Troubleshooting
-
-For known issues, see:
-
-```text
-docs/TROUBLESHOOTING.md
-```
-
-In particular:
-
-```text
-0x8A15000F
-Von der Quelle benoetigte Daten fehlen
-```
-
-is documented there in detail.
-
----
-
-# Recommended Operating Practice
-
-For production use, it is recommended to:
-
-- enable automatic Windows updates
-- enable Microsoft Store updates
-- let WingetMaintenance run regularly
-- occasionally review log files
-- keep the repository up to date
-
-This keeps most applications up to date without manual maintenance.
+For known issues, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

@@ -37,13 +37,13 @@ If the package is missing, install it from the Microsoft Store or via `winget`/`
 
 **Symptom**
 
-The maintenance script fails with:
+The maintenance script fails while updating the Winget source with:
 
 ```text
-Winget-Quelle ist nicht verfuegbar.
+Fehler beim Aktualisieren der Winget-Paketquellen
 ```
 
-This check runs a lightweight `winget search 7zip --source winget` before any real update work, to detect a broken source early.
+The maintenance script uses `winget source update` to validate and refresh the source before updating packages.
 
 **Possible causes**
 

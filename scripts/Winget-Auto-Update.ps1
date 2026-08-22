@@ -8,7 +8,7 @@
 
 .NOTES
     Author  : CTN
-    Version : 1.2.0
+    Version : 1.4.0
     License : MIT
 #>
 
@@ -134,6 +134,33 @@ $LogFile = Join-Path `
     $LogDir `
     "Winget_$Timestamp.log"
 
+function Get-LastSuccessfulFridayRun {
+    Get-ChildItem `
+        -Path $LogDir `
+        -Filter 'Winget_*.log' `
+        -File `
+        -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.Name -match '^Winget_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.log$'
+    } |
+    ForEach-Object {
+        $RunDate = [datetime]::ParseExact(
+            $matches[1],
+            'yyyy-MM-dd_HH-mm-ss',
+            [Globalization.CultureInfo]::InvariantCulture
+        )
+
+        if (
+            $RunDate.DayOfWeek -eq [DayOfWeek]::Friday -and
+            (Select-String -Path $_.FullName -Pattern 'Alle verfuegbaren Updates wurden erfolgreich verarbeitet.' -Quiet)
+        ) {
+            $RunDate
+        }
+    } |
+    Sort-Object -Descending |
+    Select-Object -First 1
+}
+
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -157,6 +184,9 @@ function Write-Log {
 
 # Logdatei für den aktuellen Lauf initialisieren
 New-Item -Path $LogFile -ItemType File -Force | Out-Null
+
+$OriginalOutputEncoding = [Console]::OutputEncoding
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 	
 try {
 
@@ -169,19 +199,24 @@ try {
 	Write-Log "Computer      : $env:COMPUTERNAME"
 	Write-Log "Benutzer      : $env:USERNAME"
 	Write-Log "Winget        : $WingetExe"
-	Write-Log 'Skriptversion : 1.2.0'
+    Write-Log 'Skriptversion : 1.4.0'
 	Write-Log '=================================================='
+
+    $Now = Get-Date
+    $LastSuccessfulFridayRun = Get-LastSuccessfulFridayRun
+    $FridayCutoff = $Now.AddDays(-7)
+
+    if (
+        $LastSuccessfulFridayRun -and
+        ($LastSuccessfulFridayRun.Date -eq $Now.Date -or $LastSuccessfulFridayRun -ge $FridayCutoff)
+    ) {
+        Write-Log "Lauf übersprungen: Letzter erfolgreicher Freitagslauf war $LastSuccessfulFridayRun."
+        return
+    }
 
     # -----------------------------------------------------------------------
     # Winget-Quellen aktualisieren
     # -----------------------------------------------------------------------
-
-	Write-Log 'Pruefe Winget-Quelle ...'
-	& $WingetExe search 7zip --source winget *> $null
-
-	if ($LASTEXITCODE -ne 0) {
-		throw 'Winget-Quelle ist nicht verfuegbar.'
-	}
 
     Write-Log 'Aktualisiere Winget-Paketquellen ...'
     & $WingetExe source update
@@ -202,7 +237,9 @@ try {
 	$WingetExitCode = $LASTEXITCODE
 
 	foreach ($Line in $WingetOutput) {
-		Write-Log ([string]$Line)
+            if (-not [string]::IsNullOrWhiteSpace([string]$Line)) {
+                Write-Log ([string]$Line)
+            }
 	}
 
 	$UpdateDuration = (Get-Date) - $UpdateStart
@@ -242,5 +279,7 @@ finally {
 	Write-Log 'Winget-Wartung beendet'
 	Write-Log "Logdatei  : $LogFile"
 	Write-Log '=================================================='
+
+    [Console]::OutputEncoding = $OriginalOutputEncoding
 
 }
