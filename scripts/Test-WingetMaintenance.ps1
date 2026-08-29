@@ -74,6 +74,47 @@ function Test-ScriptSyntax {
     }
 }
 
+function Test-ScriptParameters {
+    param(
+        [string]$Path,
+        [string[]]$ExpectedParameters
+    )
+
+    if (-not (Test-Path $Path)) {
+        Write-CheckResult -Name 'Skript-Parameter' -Success $false -Message "Datei nicht gefunden: $Path"
+        return
+    }
+
+    try {
+        $tokens = $null
+        $parseErrors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($Path, [ref]$tokens, [ref]$parseErrors)
+
+        if ($parseErrors.Count -gt 0) {
+            $details = ($parseErrors | ForEach-Object { $_.Message }) -join '; '
+            Write-CheckResult -Name 'Skript-Parameter' -Success $false -Message "$Path :: $details"
+            return
+        }
+
+        $actualParameters = @()
+        if ($null -ne $ast.ParamBlock) {
+            $actualParameters = @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name })
+        }
+
+        $missingParameters = @($ExpectedParameters | Where-Object { $_ -notin $actualParameters })
+
+        if ($missingParameters.Count -eq 0) {
+            Write-CheckResult -Name 'Skript-Parameter' -Success $true -Message "$Path :: $($ExpectedParameters -join ', ')"
+        }
+        else {
+            Write-CheckResult -Name 'Skript-Parameter' -Success $false -Message "$Path :: Fehlende Parameter: $($missingParameters -join ', ')"
+        }
+    }
+    catch {
+        Write-CheckResult -Name 'Skript-Parameter' -Success $false -Message "Fehler beim Prüfen der Parameter von $Path`: $($_.Exception.Message)"
+    }
+}
+
 function Test-InstallDirectorySecurity {
     param(
         [string]$Path
@@ -143,6 +184,7 @@ Test-InstallDirectorySecurity -Path $BaseDir
 
 # Wartungsskript prüfen
 Test-ScriptSyntax -Path $MaintenanceScript
+Test-ScriptParameters -Path $MaintenanceScript -ExpectedParameters @('SkipFridayCheck')
 
 # Registrierungs-Skript prüfen
 Test-ScriptSyntax -Path $RegistrationScript
