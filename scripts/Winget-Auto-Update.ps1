@@ -225,7 +225,7 @@ try {
     # -----------------------------------------------------------------------
 
     Write-Log 'Aktualisiere Winget-Paketquellen ...'
-    & $WingetExe source update
+    & $WingetExe source update --verbose
 
     if ($LASTEXITCODE -ne 0) {
         throw "Fehler beim Aktualisieren der Winget-Paketquellen (ExitCode: $LASTEXITCODE)."
@@ -239,7 +239,7 @@ try {
 	
 	$UpdateStart = Get-Date
 	
-    $WingetOutput = & $WingetExe upgrade --all --source winget --silent --accept-source-agreements --accept-package-agreements 2>&1
+    $WingetOutput = & $WingetExe upgrade --all --source winget --silent --accept-source-agreements --accept-package-agreements --verbose 2>&1
 	$WingetExitCode = $LASTEXITCODE
 
 	foreach ($Line in $WingetOutput) {
