@@ -9,6 +9,15 @@ Das Projekt orientiert sich an den Grundsätzen von:
 
 ---
 
+# [1.5.1] - 2026-08-29
+
+## Hinzugefügt
+
+- Optionaler Parameter `-SkipFridayCheck` für manuelle Test- und Wartungsruns ohne die Freitags-Erfolgsprüfung
+- Dokumentation zur einmaligen manuellen Ausführung ohne den normalen Freitagsschutz
+
+---
+
 # [1.5.0] - 2026-08-22
 
 ## Geändert
