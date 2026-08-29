@@ -20,6 +20,10 @@
 # winget source reset --force
 # winget source update
 
+param(
+    [switch]$SkipFridayCheck
+)
+
 # ---------------------------------------------------------------------------
 # Konfiguration
 # ---------------------------------------------------------------------------
@@ -206,12 +210,14 @@ try {
     $LastSuccessfulFridayRun = Get-LastSuccessfulFridayRun
     $FridayCutoff = $Now.AddDays(-7)
 
-    if (
-        $LastSuccessfulFridayRun -and
-        ($LastSuccessfulFridayRun.Date -eq $Now.Date -or $LastSuccessfulFridayRun -ge $FridayCutoff)
-    ) {
-        Write-Log "Lauf übersprungen: Letzter erfolgreicher Freitagslauf war $LastSuccessfulFridayRun."
-        return
+    if (-not $SkipFridayCheck) {
+        if (
+            $LastSuccessfulFridayRun -and
+            ($LastSuccessfulFridayRun.Date -eq $Now.Date -or $LastSuccessfulFridayRun -ge $FridayCutoff)
+        ) {
+            Write-Log "Lauf übersprungen: Letzter erfolgreicher Freitagslauf war $LastSuccessfulFridayRun."
+            return
+        }
     }
 
     # -----------------------------------------------------------------------

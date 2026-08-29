@@ -214,6 +214,16 @@ Successful execution:
 LastTaskResult : 0
 ```
 
+## Manual override for a single run
+
+To bypass the Friday-success check and trigger the update logic immediately, run the maintenance script directly with the switch:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$env:ProgramData\WingetMaintenance\Winget-Auto-Update.ps1" -SkipFridayCheck
+```
+
+This is intended for manual maintenance or validation runs only. The default scheduled task behavior remains unchanged unless the switch is explicitly used.
+
 ---
 
 # Check Log Files
