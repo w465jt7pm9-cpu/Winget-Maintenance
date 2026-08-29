@@ -20,6 +20,7 @@ Automatic application updates via Winget with a focus on transparency, maintaina
 | `scripts/Winget-Auto-Update.ps1` | Performs the actual update process |
 | `scripts/Register-Winget-Auto-Update.ps1` | Creates or updates the scheduled task |
 | `scripts/Test-WingetMaintenance.ps1` | Validates the deployment (Winget, scripts, scheduled task) |
+| `scripts/Deploy-WingetMaintenance.ps1` | Copies the scripts to ProgramData and re-registers the task |
 | `docs/INSTALL.md` | Installation and setup guide |
 | `docs/ARCHITECTURE.md` | Component structure and runtime flow |
 | `docs/CONCEPTS.md` | Background concepts and design decisions |
@@ -42,6 +43,16 @@ powershell -ExecutionPolicy Bypass -File "$env:ProgramData\WingetMaintenance\Win
 ```
 
 This is useful for manual maintenance runs or testing after an update was already applied outside the normal schedule.
+
+## Deployment helper
+
+Instead of copying the files manually, you can use the deployment helper script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\scripts\Deploy-WingetMaintenance.ps1"
+```
+
+This script copies the current files to `%ProgramData%\WingetMaintenance`, re-registers the scheduled task, and runs the validation script automatically.
 
 ## Installation
 

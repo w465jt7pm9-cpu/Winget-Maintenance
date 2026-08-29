@@ -78,21 +78,23 @@ and logs.
 
 # Deploy the Scripts
 
-Copy the maintenance script:
+The recommended way is to use the deployment helper script, which copies the current repository versions into `%ProgramData%\WingetMaintenance` and re-registers the scheduled task. Run it elevated:
+
+```powershell
+Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File "C:\Repos\WingetMaintenance\scripts\Deploy-WingetMaintenance.ps1"'
+```
+
+Alternatively, when an elevated shell is already open:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\scripts\Deploy-WingetMaintenance.ps1"
+```
+
+Manual copy is still possible:
 
 ```powershell
 Copy-Item ".\scripts\Winget-Auto-Update.ps1" "$env:ProgramData\WingetMaintenance\" -Force
-```
-
-Copy the task registration script:
-
-```powershell
 Copy-Item ".\scripts\Register-Winget-Auto-Update.ps1" "$env:ProgramData\WingetMaintenance\" -Force
-```
-
-Copy the validation script:
-
-```powershell
 Copy-Item ".\scripts\Test-WingetMaintenance.ps1" "$env:ProgramData\WingetMaintenance\" -Force
 ```
 
